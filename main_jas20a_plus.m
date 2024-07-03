@@ -11,7 +11,7 @@ close all;
 
 
 %-- Load colour schemes --------------------------------------------------%
-addpath cmap tfer;
+addpath cmap tfer tfer/tfer-pma;
 cm = inferno;
 cm = cm(40:end,:);
 cm_b = cm;

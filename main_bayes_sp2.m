@@ -5,7 +5,7 @@ close all;
 
 
 %-- Load colour maps -----------------------------------------------------%
-addpath cmap tfer;
+addpath cmap tfer tfer/tfer-pma;
 cm_alt = bupu(255);
 cm_b = inferno(255);
 cm_b = cm_b(40:end,:);
