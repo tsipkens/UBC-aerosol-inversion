@@ -1,0 +1,11 @@
+{
+   "name": "Soot surrogate, 2", 
+   "p": {
+      "dg": 127,
+      "sg": 1.72,
+      "rhog": 626,
+      "smd": 1.46,
+      "Dm": 2.34
+   }, 
+   "type": ["logn"]
+}

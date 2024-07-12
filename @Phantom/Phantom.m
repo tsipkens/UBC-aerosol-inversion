@@ -222,7 +222,7 @@ methods
                 
             %-- OPTION 3: Use a preset or sample distribution --------%
             otherwise % check if type is a preset phantom
-                [p,modes,type_name] = obj.presets(type_name);
+                [p, modes, type_name, w] = obj.presets(type_name);
                 if isempty(p); error('Invalid phantom call.'); end
                 
                 obj.type = type_name;
@@ -496,10 +496,38 @@ end
 
 
 methods (Static)
-    %== PRESET_PHANTOMS (External definition) ========================%
+    %== PRESETS ======================================================%
     %   Returns a set of parameters for preset/sample phantoms.
-    [p,modes,type] = presets(obj,type);
+    %   AUTHOR: Timothy Sipkens, 2019-10-31, 2024-07-12
+    function [p, type, name, w] = presets(name)
+    
+    fname = ['@Phantom/json/', name, '.json'];
+    
+    if ~isfile(fname)
+        error('The specified phantom config file does not exist.');
+    end
+    
+    % Read in phantom information.
+    s = io.read_json(fname);
+    
+    % Unpack phantom information. 
+    if isfield(s, 'p')
+        name = s.name;
+        p = s.p;
+        type = s.type;
+    
+        if isfield(s, 'w'); w = s.w; end
+    
+    elseif isfield(s, 'Gam')
+        % Not currently available.
+    end
+    
+    % If no weight, then assign as empty for output. 
+    if ~exist('w', 'var'); w = []; end
+    
+    end
     %=================================================================%
+    
     
     %== FIT (External definition) ====================================%
     %   Fits a phantom to a given set of data, x, defined on a given grid, 
