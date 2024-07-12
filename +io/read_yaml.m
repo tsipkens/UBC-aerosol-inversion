@@ -1,10 +1,10 @@
 
-% READ_YML  Simple little function to read simple little YAML format parameter files.
+% READ_YAML  Simple little function to read simple little YAML format parameter files.
 %  
 %  AUTHOR: Lloyd Russell, 2017
 %  REPO: https://github.com/llerussell/ReadYAML
 
-function results = read_yml(filePath)
+function results = read_yaml(filePath)
 
 % read file line by line
 fid = fopen(filePath, 'r');
