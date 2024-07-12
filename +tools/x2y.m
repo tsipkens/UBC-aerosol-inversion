@@ -15,12 +15,16 @@
 %  second dimension. FUN must be a linear function in logspace for A and B. 
 %  
 %    FUN examples:
-%    A. mass-mobility > effective density-mobility
-%       FUN = @(a, b) 6 .* a ./ (pi .* b .^ 3) .* 1e9;
-%    B. mrBC-mp > frBC-mp
-%       FUN = @(a, b) a ./ b;
-%    C. mrBC-mp > fnrBC/mp
-%       FUN = @(a, b) 1 - a ./ b;
+%    PMA-DMA:
+%       A. mass-mobility > effective density-mobility
+%           FUN = @(a, b) 6 .* a ./ (pi .* b .^ 3) .* 1e9;
+% 
+%    PMA-SP2
+%       B. mrBC-mp > frBC-mp
+%          FUN = @(a, b) a ./ b;
+%       
+%       C. mrBC-mp > fnrBC/mp
+%          FUN = @(a, b) 1 - a ./ b;
 %  
 %  Y = tools.x2y(X, GRID_X, FUN, DIM) applies the transformation while
 %  preserving the quantity in the DIM dimension of the input grid. For
