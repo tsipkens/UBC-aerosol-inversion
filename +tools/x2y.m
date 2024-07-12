@@ -22,9 +22,6 @@
 %    PMA-SP2
 %       B. mrBC-mp > frBC-mp
 %          FUN = @(a, b) a ./ b;
-%       
-%       C. mrBC-mp > fnrBC/mp
-%          FUN = @(a, b) 1 - a ./ b;
 %  
 %  Y = tools.x2y(X, GRID_X, FUN, DIM) applies the transformation while
 %  preserving the quantity in the DIM dimension of the input grid. For
