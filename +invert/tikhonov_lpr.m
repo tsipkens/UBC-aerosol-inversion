@@ -85,7 +85,7 @@ switch order
     case 2  % 2nd order Tikhonov
         switch var{1}  % adds variants of 2nd order Tikhonov
             case 0  % standard Laplacian
-                if isa(n_grid, 'Grid'); Lpr0 = n_grid.l2;  % use Grid method (for partial grid support)
+                if isa(n_grid, 'Grid'); Lpr0 = n_grid.l2(bc);  % use Grid method (for partial grid support)
                 else
                     I1 = 0.25 .* speye(n,n);
                     E1 = sparse(1:n-1,2:n,1,n,n);

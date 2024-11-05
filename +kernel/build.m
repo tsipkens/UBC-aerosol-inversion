@@ -74,8 +74,8 @@ elseif any(strcmp(grid_i.type, 'chi'))
 
     chi_idx = find(strcmp(grid_i.type, 'chi'));
     if ~any(strcmp(grid_i.type, 'mp'))
-        m = prop_p.rhom .* (1e3*pi/6) .* ...
-            (dm_chi2dve(grid_i.elements(:, chi_idx), grid_i.elements(:, dm_idx))) .^ 3;
+        m = 1e18 .* dm_chi2mp(grid_i.elements(:, dm_idx) .* 1e-9, ...
+            grid_i.elements(:, chi_idx), prop_p.rhom);
     end
 
 elseif any(strcmp(grid_i.type, 'mp'))
@@ -347,8 +347,8 @@ end
 
 
 
-function dve = dm_chi2dve(chi, dm)
-% DM_CHI2DVE  Use mobility diameter and shape factor to get volume-eq. diameter.
+function [mp, dve] = dm_chi2mp(dm, chi, rhom)
+% DM_CHI2MP  Use mobility diameter and shape factor to get volume-eq. diameter.
 %  AUTHOR: Timothy Sipkens, 2024-10-24
 
 addpath autils;
@@ -360,5 +360,8 @@ for ii=1:length(dve)
     dve(ii) = fzero(fun, dve(ii));
 end
 
+mp = rhom .* (pi/6) .* dve .^ 3;
+
 end
+
 

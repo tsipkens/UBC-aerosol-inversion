@@ -401,11 +401,22 @@ methods
     
 
     %== L2 ===========================================================%
-    function l2 = l2(obj)
+    function l2 = l2(obj, bc)
     % L2  Compute Laplacian
     %  Form is equiavalent to Tikhonov operator applying no slope at grid boundary.
+
+        if ~exist('bc', 'var'); bc = 2; end
+
         l2 = -diag(sum(obj.adj)) + ...
             triu(obj.adj) + tril(obj.adj);
+        
+        if bc == 0  % force zeros at BC. (update Jan. 2024)
+            isedge = find(obj.elements(:,2) == obj.edges{2}(end));
+            isedge = [isedge; find(obj.elements(:,1) == obj.edges{1}(end))];
+            isedge = [isedge; find(obj.elements(:,2) == obj.edges{2}(1))];
+            isedge = [isedge; find(obj.elements(:,1) == obj.edges{1}(1))];
+            l2(isedge, isedge) = eye(length(isedge));  % replace entries with identity
+        end
     end
     %=================================================================%
     
