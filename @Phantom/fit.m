@@ -8,6 +8,7 @@
 %               of the coordiantes of the elements
 %   logr0       Initial guess for center of each mode, expressed as a vector:
 %               logr0 = [dim1_mode1,dim2_mode1]
+%   Sigma       Estimate of the phantom covariance
 %
 % Outputs: 
 %   pha         Output phantom object representing a fit bivariate lognormal
@@ -16,7 +17,7 @@
 %   J           Jacobian of fitting procedure
 %=============================================================%
 
-function [pha, N, y_out, ci] = fit(x, vec_grid, logr0)
+function [pha, N, y_out, ci] = fit(x, vec_grid, logr0, Sigma)
 
 tools.textheader('Fitting phantom object');
 
@@ -31,6 +32,7 @@ else
         % specify a span for a grid
 end
 if ~exist('logr0','var'); logr0 = []; end
+if ~exist('Sigma','var'); Sigma = []; end
 %-------------------------------------------------------------%
 
 
@@ -47,6 +49,10 @@ y0 = [max(x), ...  % C, scaling factor
 % Update centers of distributions, if specified.
 if ~isempty(logr0)
     y0(2:3) = logr0;
+end
+if ~isempty(Sigma)
+    y0(4:5) = sqrt([Sigma(1,1), Sigma(2,2)]);
+    y0(6) = asin(Sigma(1,2)/sqrt(Sigma(1,1) * Sigma(2,2)));
 end
 
 opts.Display = 'off';

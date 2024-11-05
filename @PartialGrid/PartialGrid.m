@@ -271,8 +271,12 @@ methods
         [dr, dr1, dr2] = dr@Grid(obj);
         
         %-- Added processing for partial grids -----------------------%
-        dr0 = obj.full2partial(dr); % used if lower cut is employed
-
+        dr = obj.full2partial(dr); % used if lower cut is employed
+        
+        %{
+        % Archived code that could calculate remaining area after cut. 
+        % When commented, full area of element if maintained if any part 
+        % of the element remains. 
         [~,rmin,rmax] = obj.ray_sum([0, obj.cut(1)], obj.cut(2), 0);
         t0 = (rmin(:,1) - log10(obj.nelements(:,1))) .* ...
             (log10(obj.nelements(:,4)) - log10(obj.nelements(:,3)));
@@ -298,6 +302,7 @@ methods
                     % lower, right triangle
             dr = dr .* (t0+t1+t2) ./ dr0; % accounts for element that are discected twice
         end
+        %}
         %-------------------------------------------------------------%
     end
     %=================================================================%

@@ -49,14 +49,37 @@ tools.textheader('Computing kernel')
 nc = (length(varargin)/2);  % number of classifiers
 Lambda{nc} = [];  % initialize Lambda_ii
 
+% Set default indices, if type not specified (mass-mobility grid).
+if isempty(grid_i.type)
+    grid_i.type = {'mp', 'dm'};
+end
+
 dm_idx = find(strcmp(grid_i.type, 'dm'));
 mp_idx = find(strcmp(grid_i.type, 'mp'));
 da_idx = find(strcmp(grid_i.type, 'da'));
 
-% Set default indices, if type not specified (mass-mobility grid).
-if isempty(grid_i.type)
-    dm_idx = 2;
-    mp_idx = 1;
+% Get single particle mass (incl. from density if supplied).
+% Convert effective density and mobility diameter to mass.
+if any(strcmp(grid_i.type, 'rho'))
+    rho_idx = find(strcmp(grid_i.type, 'rho'));
+    if ~any(strcmp(grid_i.type, 'mp'))
+        m = (pi/6) .* grid_i.elements(:, rho_idx) .* ...
+            grid_i.elements(:, dm_idx) .^ 3 * 1e-9;
+    end
+
+% Convert dynamic shape factor and mobility diameter to mass. 
+elseif any(strcmp(grid_i.type, 'chi'))
+    idx_p = find(strcmp(varargin, 'pma')) + 1;  % first find PMA inputs
+    prop_p = varargin{idx_p}{2};
+
+    chi_idx = find(strcmp(grid_i.type, 'chi'));
+    if ~any(strcmp(grid_i.type, 'mp'))
+        m = prop_p.rhom .* (1e3*pi/6) .* ...
+            (dm_chi2dve(grid_i.elements(:, chi_idx), grid_i.elements(:, dm_idx))) .^ 3;
+    end
+
+elseif any(strcmp(grid_i.type, 'mp'))
+    m = grid_i.elements(:, mp_idx);
 end
 
 % Handle if mobility diameter is not given directly (req'd for charging/PMA).
@@ -79,7 +102,6 @@ if isempty(dm_idx)
         
         % Then convert using mass-mobility relationship. 
         disp(' Invoking mass-mobility relationship to determine dm.');
-        m = grid_i.elements(:, mp_idx);  % get mass from relevant dimension
         dm = mp2dm(m .* 1e-18, prop_p) .* 1e9;
         dm2 = dm';
     end
@@ -146,17 +168,10 @@ for ii=1:nc
             % Unpack inputs.
             m_star = varargin{jj+1}{1};  % don't use unique(), as resolution may change
             prop_p = varargin{jj+1}{2};  % DMA properties
-
-            % Points for integration.
-            m = grid_i.elements(:, mp_idx);  % masses at which to compute the transfer function (not setpoints)
-
+            
             % Handle mobility diameter.
             if ~isempty(dm_idx)  % use corresponding dimension of grid
                 dm = grid_i.elements(:, dm_idx);
-            elseif length(varargin{jj+1}) > 2
-                if ~isempty(varargin{jj+1}{3})
-                    dm = varargin{jj+1}{3};  % then get from explicit input
-                end
             else  % then likely PMA without DMA
                 dm = (m .* 1e-18 ./ prop_p.rho0) .^ ...
                     (1/prop_p.Dm) .* 1e9;  % use mass-mobility
@@ -230,9 +245,10 @@ for ii=1:nc
             disp(' Computing binned contribution ...');
 
             % Unpack inputs.
-            s_idx = varargin{jj+1}{1};
-            s_star2 = varargin{jj+1}{2};
+            s_star2 = varargin{jj+1}{1};
             s_star = unique(s_star2)';
+
+            s_idx = varargin{jj+1}{2};
             s = grid_i.edges{s_idx};  % points for integration
             
             Lambda{ii} = full(tfer_bin(s_star', s'));
@@ -242,8 +258,65 @@ for ii=1:nc
             [~,kk] = max(s == s2, [], 2);
             Lambda{ii} = Lambda{ii}(:,kk,:);
             
+            % Copy to identical data points.
             [~,kk] = max(s_star == s_star2, [], 2);
             Lambda{ii} = Lambda{ii}(kk,:,:);
+            
+            % Avoid double counting bin width during later ".* dr".
+            [~, dr1, dr2] = grid_i.dr;
+            if s_idx == 1; dr = dr1(:);
+            else dr = dr2(:); end
+
+            if isa(grid_i, 'PartialGrid')
+                dr = grid_i.full2partial(dr);
+            end
+            Lambda{ii} = Lambda{ii} ./ dr';
+
+            tools.textdone();
+
+
+        case {'sp2-frBC'}
+            disp(' Computing SP2 (frBC) contribution ...');
+
+            % Unpack inputs.
+            s_star2 = varargin{jj+1}{1};
+            s_star = unique(s_star2)';
+
+            s_idx = find(strcmp(grid_i.type, 'frBC'));
+            alt_idx = 3 - s_idx;
+
+            frBC = grid_i.edges{s_idx};
+            Lambda{ii} = zeros(length(s_star), grid_i.Ne);
+            for ss=1:length(grid_i.edges{alt_idx})
+                mp = grid_i.edges{alt_idx}(ss);
+                mrBC = frBC .* mp;
+                
+                Lam_ss = full(tfer_bin(s_star', mrBC'));
+
+                frBC2 = grid_i.elements(:, s_idx);
+                mp2 = grid_i.elements(:, alt_idx);
+                [~,kk] = max(and(frBC == frBC2, mp == mp2), [], 2);
+                Lam_ss = Lam_ss(:,kk);
+
+                % Remove null rows.
+                Lam_ss(:, ~any(and(frBC == frBC2, mp == mp2), 2)) = 0;
+
+                Lambda{ii} = Lambda{ii} + Lam_ss;
+            end
+            
+            % Copy to identical data points.
+            [~,kk] = max(s_star == s_star2, [], 2);
+            Lambda{ii} = Lambda{ii}(kk,:,:);
+            
+            % Avoid double counting bin width during later ".* dr".
+            [~, dr1, dr2] = grid_i.dr;
+            if s_idx == 1; dr = dr1(:);
+            else dr = dr2(:); end
+
+            if isa(grid_i, 'PartialGrid')
+                dr = grid_i.full2partial(dr);
+            end
+            Lambda{ii} = Lambda{ii} ./ dr';
 
             tools.textdone();
 
@@ -272,4 +345,20 @@ tools.textheader();
 
 end
 
+
+
+function dve = dm_chi2dve(chi, dm)
+% DM_CHI2DVE  Use mobility diameter and shape factor to get volume-eq. diameter.
+%  AUTHOR: Timothy Sipkens, 2024-10-24
+
+addpath autils;
+
+dve = dm ./ chi;
+
+for ii=1:length(dve)
+    fun = @(dve) dve - dm(ii) / chi(ii) .* Cc(dve) ./ Cc(dm(ii));
+    dve(ii) = fzero(fun, dve(ii));
+end
+
+end
 

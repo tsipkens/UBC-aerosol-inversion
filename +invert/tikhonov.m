@@ -70,6 +70,12 @@ end
 Lpr = lambda .* Lpr0;
 
 
+%-- Remove null data from data set ---------------------------------------%
+%   This corresponds to data that does not impact reconstruction. 
+keep = ~all(A == 0, 2);
+A = A(keep, :);
+b = b(keep);
+
 %-- Choose and execute solver --------------------------------------------%
 pr_length = size(Lpr0, 1);
 [x,D] = invert.lsq(...

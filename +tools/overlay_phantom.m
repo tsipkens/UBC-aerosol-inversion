@@ -6,9 +6,11 @@
 function [pha, N, ci] = overlay_phantom(x_pha,grid,iso_levels,varargin)
 
 %-- Parse inputs ---------------------------------------------------------%
+if ~exist('grid', 'var'); grid = []; end
+
 if isa(x_pha, 'Phantom')
     pha = x_pha;
-    grid = pha.grid;
+    if isempty(grid); grid = pha.grid; end
     N = [];
 else
     [pha, N, ~, ci] = Phantom.fit(x_pha, grid);

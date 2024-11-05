@@ -20,7 +20,7 @@ end
 
 % Open CPMA CPOF file and read data.
 opts = detectImportOptions(fn, ...
-    'FileType','text');
+    'FileType', 'text');
 
 warning off;
 in = readtable(fn, opts);

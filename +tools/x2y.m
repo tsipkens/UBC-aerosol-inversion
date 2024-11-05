@@ -40,6 +40,8 @@
 %  [Y, GRID_Y] = tools.x2y(...) outputs the grid on which the
 %  effective density-mobility distribution is defined.
 %  
+%  [Y, GRID_Y, T] = tools.x2y(...) add output for transformation matrix.
+%  
 %  ------------------------------------------------------------------------
 %  
 %  NOTE: This function requires that FUN be linear in logspace (e.g.,
@@ -47,7 +49,7 @@
 %  
 %  AUTHOR: Timothy Sipkens, 2019-05-17
 
-function [y, grid_y] = x2y(x, grid_x, fun, dim, span_y, n_y)
+function [y, grid_y, T] = x2y(x, grid_x, fun, dim, span_y, n_y)
 
 %-- Parse inputs -----------------------------------%
 if ~exist('fun', 'var'); fun = []; end
@@ -66,8 +68,9 @@ if isempty(n_y); n_y = 600; end  % can be large as conversion is simple
 if ~exist('span_y', 'var'); span_y = []; end
 if isempty(span_y)  % estimate from existing spans and x values
     f0 = fun(grid_x.elements(:, 1), grid_x.elements(:, 2));  % compute fun for all elements
-    f_sig = x > max(x) ./ 1e4;  % flag significant x values
     
+    % f_sig = x > max(x) ./ 1e4;  % flag significant x values
+
     f2 = log10(max(f0(f_sig)));  % upper bound
     f2 = ceil(10 .^ (f2 - floor(f2)) .* 10) ./ 10 .* ...  % pre-factor
         10 .^ floor(f2);  % exponent

@@ -13,10 +13,10 @@
 %  ORDER = 1 creates a matrix that estimates the first derivative of some
 %  X. 
 %  
-%  LPR0 = invert.tikhonov_lpr(ORDER, GRID, []) replaces N and X_LENGHT with
+%  LPR0 = invert.tikhonov_lpr(ORDER, GRID, []) replaces N and X_LENGTH with
 %  an instance of the Grid or PartialGrid class, extracting the necessary
 %  information and, in some instances, allowing for Tikhonov matrix for
-%  grids that are missing elements. 
+%  grids that have missing elements (i.e., a PartialGrid). 
 %  
 %  LPR0 = invert.tikhonov_lpr(..., BC) adds a variable to specify the type
 %  of boundary condition for certain methods. For example, BC = 0 pushed
@@ -83,9 +83,9 @@ switch order
         end
         
     case 2  % 2nd order Tikhonov
-        switch var{1}
+        switch var{1}  % adds variants of 2nd order Tikhonov
             case 0  % standard Laplacian
-                if isa(n_grid, 'Grid'); Lpr0 = n_grid.l2; % use Grid method (for partial grid support)
+                if isa(n_grid, 'Grid'); Lpr0 = n_grid.l2;  % use Grid method (for partial grid support)
                 else
                     I1 = 0.25 .* speye(n,n);
                     E1 = sparse(1:n-1,2:n,1,n,n);
@@ -130,27 +130,6 @@ switch order
                     Lpr0(n_grid.missing, :) = [];
                     Lpr0(:, n_grid.missing) = [];
                 end
-        
-            case 2  % stacked matrices
-                m = x_length / n;
-                
-                I1 = speye(n, n);
-                D1 = -2 .* speye(m, m);
-                D1 = spdiags(ones(m,2), -1, D1);
-                D1 = spdiags(ones(m,2), 1, D1);
-                % D1(1,:) = [];
-                % D1(end,:) = [];
-                
-                I2 = speye(m, m);
-                D2 = -2 .* speye(n, n);
-                D2 = spdiags(ones(n,2), -1, D2);
-                D2 = spdiags(ones(n,2), 1, D2);
-                % D2(1,:) = [];
-                % D2(end,:) = [];
-                
-                Lpr1 = kron(I2, D2);
-                Lpr2 = kron(D1, I1);
-                Lpr0 = [Lpr1; Lpr2];
         end
 
     case 3  % 3rd order derivative

@@ -10,10 +10,15 @@ function [x, G_smooth, SIGMA] = markowski(A, b, Lb, x, n, iter, opt_smooth, Sf, 
 
 x_length = length(x);
 
-if strcmp('Buckley',  opt_smooth) % smoothing according to Buckley
+if strcmp(opt_smooth, 'Buckley')  % smoothing according to Buckley
     G_smooth = G_Buckley(n, x_length, Sf);
-elseif strcmp('Grid',opt_smooth) % smoothing based on adjacency matrix in Grid
+
+elseif strcmp(opt_smooth, '2')  % smoothing to minimize second derivative
+    G_smooth = G2(n, x_length, Sf);
+
+elseif strcmp(opt_smooth, 'Grid')  % smoothing based on adjacency matrix in Grid
     G_smooth = G_grid(n, x_length, Sf);
+
 else % original Markowski-type smoothing matrix
     G_smooth = G_Markowski(n, x_length);
 end
@@ -75,10 +80,10 @@ end
 
 %== G_BUCKLEY ============================================================%
 %   Generates the smoothing matrix suggested by Buckley et al. (2017)
-function G_smooth = G_Buckley(n,x_length,Sf)
+function G_smooth = G_Buckley(n, x_length, Sf)
 
-norm_factor = 0.5+8*Sf;
-G_smooth = 0.5/norm_factor.*eye(x_length);
+norm_factor = 0.5 + 8 * Sf;
+G_smooth = 0.5/norm_factor .* eye(x_length);
 for jj=1:x_length
     if mod(jj,n)==0 % right side
         if jj>(x_length-n) % bottom, right corner
@@ -130,15 +135,41 @@ end
 %=========================================================================%
 
 
+%== G2 ===================================================================%
+%   A smoothing function roughly minimizing the second-derivative.
+function G_smooth = G2(n, x_length, ~)
+
+m = x_length / n;
+
+I1 = speye(n, n);
+D1 = 2 .* speye(m, m);
+D1 = spdiags(ones(m,2), -1, D1);
+D1 = spdiags(ones(m,2), 1, D1);
+
+I2 = speye(m, m);
+D2 = 2 .* speye(n, n);
+D2 = spdiags(ones(n,2), -1, D2);
+D2 = spdiags(ones(n,2), 1, D2);
+
+Lpr1 = kron(I2, D2);
+Lpr2 = kron(D1, I1);
+G_smooth = Lpr1 + Lpr2;
+
+G_smooth = G_smooth ./ sum(G_smooth);
+
+end
+%=========================================================================%
+
+
 %== G_GRID ===============================================================%
 %   Generates the smoothing matrix when a partial grid is provided.
 %   Uses a four-point stencil. 
-function G_smooth = G_grid(grid,~,Sf)
+function G_smooth = G_grid(grid, ~, Sf)
 
 g1 = grid.adjacency8; % off-diagonal components
-norm_factor = 0.5+sum(g1,2).*Sf;
+norm_factor = 0.5 + sum(g1,2).*Sf;
 
-G_smooth = (0.5.*speye(size(g1))+Sf.*g1)./norm_factor;
+G_smooth = (0.5.*speye(size(g1)) + Sf.*g1) ./ norm_factor;
 
 end
 %=========================================================================%
@@ -149,8 +180,8 @@ end
 %   Calculates the mean squared error of the non-zero entries of b
 function SIGMA = calc_mean_sq_error(A,x,b)
 
-sqErr = (A*x-b).^2; % squared errors, normalized by expected error in b
-SIGMA = mean(sqErr(b~=0)); % average square error for cases where b~= 0
+sqErr = (A*x - b) .^ 2; % squared errors, normalized by expected error in b
+SIGMA = mean(sqErr(b ~= 0)); % average square error for cases where b~= 0
 
 end
 %=========================================================================%

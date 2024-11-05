@@ -532,7 +532,7 @@ methods (Static)
     %== FIT (External definition) ====================================%
     %   Fits a phantom to a given set of data, x, defined on a given grid, 
     %       or vector of elements. Outputs a fit phantom object.
-    [phantom,N,y_out,J] = fit(x,vec_grid,logr0);
+    [phantom,N,y_out,J] = fit(x,vec_grid,logr0,Sigma);
     %=================================================================%
     
     %== FIT2 (External definition) ===================================%

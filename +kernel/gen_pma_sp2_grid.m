@@ -42,7 +42,7 @@ function [A,sp] = gen_pma_sp2_grid(grid_b, grid_i, prop_p, varargin)
 %-- Parse inputs ---------------------------------------------------------%
 % If not given, import default properties of PMA, 
 % as selected by prop_pma function.
-addpath tfer; % add mat-tfer-pma package to MATLAB path
+addpath tfer tfer/tfer-pma; % add mat-tfer-pma package to MATLAB path
 if ~exist('prop_p','var'); prop_p = []; end
 if isempty(prop_p); prop_p = prop_pma(); end
     

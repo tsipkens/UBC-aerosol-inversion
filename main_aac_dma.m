@@ -47,6 +47,16 @@ grid_b = Grid(span_b, ne_b, 'log');
 prop_a = prop_aac();
 prop_a = massmob.add(prop_a, 'zet', 3, 'rho100', 2160);
 
+prop_a.Qa = prop_a.Qa(1) .* ones(size(grid_b.edges{1}));
+prop_a.Qa(end-2:end) = 2.5e-5;
+
+prop_a.Qexh = prop_a.Qexh(1) .* ones(size(grid_b.edges{1}));
+prop_a.Qexh(end-2:end) = 2.5e-4;
+
+prop_a.Qs = prop_a.Qa;
+prop_a.Qsh = prop_a.Qexh;
+
+
 prop_d = prop_dma();
 prop_d.Qa = prop_d.Qa(1) .* ones(size(grid_b.edges{1}));
 prop_d.Qa(end-2:end) = 2.5e-5;
@@ -56,6 +66,7 @@ prop_d.Qc(end-2:end) = 2.5e-4;
 
 prop_d.Qs = prop_d.Qa;
 prop_d.Qm = prop_d.Qc;
+
 
 % opts_a = struct();  opts_a.model = 'lt';
 

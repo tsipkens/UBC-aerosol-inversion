@@ -78,7 +78,7 @@
 classdef Grid
 
 properties
-    discrete = 'log';
+    discrete = {'log', 'log'};
                 % type discretization to be applied to the edges
                 % ('log'/'logarithmic' or 'linear')
     
@@ -102,6 +102,9 @@ properties
     elements = [];  % contains position of pixel/element centers as a (ne x 2) vector
     nelements = []; % position of pixel/elements edges as a (ne x 4) vector
                     % [dim1_low,dim1_high,dim2_low,dim2_high]
+
+    nodes_tr = [];  % transformed nodes to allow for log/lin basis
+    nelements_tr = [];  % transformed nelements ...
                 
     adj = [];   % adjacency matrix
 end
@@ -119,7 +122,8 @@ methods
         if ~exist('discrete','var'); discrete = []; end
         if isempty(discrete); discrete = 'log'; end
         if strcmp(discrete, 'logarithmic'); discrete = 'log'; end % allow for longhand
-        %-------------------------------------------------------------%
+        if strcmp(discrete, 'linear'); discrete = 'lin'; end % allow for longhand
+        if ischar(discrete); discrete = {discrete, discrete}; end % stretch for both dims
         
         if isa(span_edges,'cell')  % consider case where edges are given
             obj.edges = span_edges;
@@ -134,11 +138,7 @@ methods
         end
         obj.Ne = prod(obj.ne);
 
-        if exist('discrete', 'var') % if discretization scheme is specified
-            if ~isempty(discrete)
-                obj.discrete = discrete;
-            end
-        end
+        obj.discrete = discrete;
 
         obj = obj.mesh; % generates grid points
         obj = obj.adjacency; % get adjacency matrix
@@ -162,10 +162,10 @@ methods
         %-- If required, generate edge discretization vectors --------%
         if isempty(obj.edges)
             for ii=1:obj.dim % loop through both dimensions
-                if strcmp('linear',obj.discrete)
+                if strcmp('lin',obj.discrete{ii})
                     obj.edges{ii} = linspace(obj.span(ii,1),obj.span(ii,2),obj.ne(ii));
 
-                elseif strcmp('log',obj.discrete)
+                elseif strcmp('log',obj.discrete{ii})
                     obj.edges{ii} = logspace(...
                         log10(obj.span(ii,1)),log10(obj.span(ii,2)),obj.ne(ii));
                 end
@@ -175,14 +175,14 @@ methods
 
         %-- Generate nodes -------------------------------------------%
         for ii=1:obj.dim
-            if strcmp(obj.discrete,'log')
+            if strcmp(obj.discrete{ii},'log')
                 r_m = exp((log(obj.edges{ii}(2:end))+...
                     log(obj.edges{ii}(1:(end-1))))./2); % mean of edges
 
                 obj.nodes{ii} = [exp(2*log(obj.edges{ii}(1))-log(r_m(1))),...
                     r_m, exp(2*log(obj.edges{ii}(end))-log(r_m(end)))];
                 
-            elseif strcmp(obj.discrete,'linear')
+            elseif strcmp(obj.discrete{ii},'lin')
                 r_m = (obj.edges{ii}(2:end)+...
                     obj.edges{ii}(1:(end-1)))./2; % mean of edges
 
@@ -402,8 +402,8 @@ methods
 
     %== L2 ===========================================================%
     function l2 = l2(obj)
-    % L2  Compute the second-order Tikhonov operator.
-    %  Form is equiavalent to applying no slope at grid boundary.
+    % L2  Compute Laplacian
+    %  Form is equiavalent to Tikhonov operator applying no slope at grid boundary.
         l2 = -diag(sum(obj.adj)) + ...
             triu(obj.adj) + tril(obj.adj);
     end
@@ -494,11 +494,11 @@ methods
         
         dr_0 = cell(obj.dim, 1);
         for ii=1:obj.dim
-            if any(strcmp(obj.discrete, {'log', 'logarithmic'}))
+            if strcmp(obj.discrete{ii}, 'log')
                 dr_0{ii} = log10(obj.nodes{ii}(2:end)) - ...
                     log10(obj.nodes{ii}(1:(end-1)));
             
-            elseif strcmp(obj.discrete,'linear')
+            elseif strcmp(obj.discrete{ii},'lin')
                 dr_0{ii} = obj.nodes{ii}(2:end) - ...
                     obj.nodes{ii}(1:(end-1));
             end
@@ -753,9 +753,11 @@ methods
         
         %-- Adjust tick marks for log scale ----%
         %   'logarithmic' included for backward compatibility.
-        if any(strcmp(obj.discrete, {'log', 'logarithmic'}))
-            set(gca,'XScale','log');
-            set(gca,'YScale','log');
+        if strcmp(obj.discrete{2}, 'log')
+            set(gca, 'XScale', 'log');
+        end
+        if strcmp(obj.discrete{1}, 'log')
+            set(gca, 'YScale', 'log');
         end
         
         xlim(obj.span(idx2,:));  % set plot limits bsed on grid limits
@@ -770,6 +772,8 @@ methods
         set(gca, 'XColor', [0.5, 0.5, 0.5], ...
             'YColor', [0.5, 0.5, 0.5], ...
             'linewidth', 0.75);
+
+        axis square;
         
         if nargout>0; h = gca; end
         
@@ -858,8 +862,9 @@ methods
         x_rs = reshape(x, grid.ne);
         if dim==2; x_rs = x_rs'; end
         
-        h = semilogx(grid.edges{dim2},x_rs,...
-            'o-','MarkerSize',2.5,'MarkerFaceColor',[1,1,1]);
+        % h = semilogx(grid.edges{dim2},x_rs,...
+        %     'o-','MarkerSize',2.5,'MarkerFaceColor',[1,1,1]);
+        h = semilogx(grid.edges{dim2}, x_rs, '-');
 
         if nargout==0; clear h; end
     
@@ -902,17 +907,17 @@ methods
             subplot(3,1,2:3);
             if ~isempty(findall(gca,'type','line')); hold on; end
                 % if not the first line in the plot, hold on
-            semilogx(obj.edges{dim},x_m{dim});
+            semilogx(obj.edges{dim}, x_m{dim});
             hold off;
         end
 
 
         %-- Set axes limits ------------------------------------------%
         subplot(3,1,2:3);
-        xlim([min(obj.edges{dim}),max(obj.edges{dim})]);
+        xlim([min(obj.edges{dim}), max(obj.edges{dim})]);
 
         subplot(3,1,1);
-        xlim([min(obj.edges{dim}),max(obj.edges{dim})]);
+        xlim([min(obj.edges{dim}), max(obj.edges{dim})]);
     end
     %=================================================================%
 
